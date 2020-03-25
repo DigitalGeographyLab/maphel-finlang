@@ -208,12 +208,12 @@ con = psycopg2.connect(database=database, user=user, password=pw,
 print('[INFO] - Connected to ' + str(database) + ' at ' + str(host))
 
 # Init Metadata
-#meta = MetaData()
+meta = MetaData()
 
 # Create session
 print("[INFO] - Launching database session...")
-#Session = sessionmaker(bind=engine)
-#session = Session()
+Session = sessionmaker(bind=engine)
+session = Session()
 
 # sql to count rows
 sql_rc = "SELECT COUNT(*) FROM " + tablename
@@ -234,7 +234,7 @@ botlist = [61043461,61043172,126049550,618294231,1148156568,1447948944,
            322598698]
 
 # Define chunksize
-chunksize = 5000
+chunksize = 500000
 
 # Get row count
 print('[INFO] - Getting row count of ' + str(tablename) + '...')
@@ -277,6 +277,9 @@ for i in range(int(row_count / chunksize) + 1):
     df['prob'] = df['langid'].apply(lambda x: x[1])
     df['charlen'] = df['langid'].apply(lambda x: x[2])
     
+    # drop list, postgreSQL doesn't support it
+    df = df.drop(columns=['langid'])
+    
     # push language detection results to database
     print('[INFO] - Pushing results from chunk {} results to table'.format(i))
     df.to_sql(outtable, schema='public', con=engine, if_exists='append',
@@ -285,4 +288,4 @@ for i in range(int(row_count / chunksize) + 1):
 print('[INFO] - Table ' + str(tablename) + ' processed and pushed to ' + str(outtable))
 print('[INFO] - ...done!')
 # Close session
-#session.close()
+session.close()
