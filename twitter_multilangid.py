@@ -16,6 +16,7 @@ from sqlalchemy.engine.url import URL
 from sqlalchemy import create_engine
 from sqlalchemy import MetaData
 from sqlalchemy.orm import sessionmaker
+from nltk.tokenize.punkt import PunktSentenceTokenizer
 import argparse
 
 # Set up the argument parser
@@ -152,6 +153,25 @@ def preprocess_caption(row, mode):
     # Return the preprocessed row
     return row
 
+def split_sentence(caption):
+    """Tokenizes sentences using NLTK's Punkt tokenizer.
+
+    Args:
+        caption: A string containing UTF-8 encoded text.
+
+    Returns:
+        A list of tokens (sentences).
+    """
+
+    # Initialize the sentence tokenizer
+    tokenizer = PunktSentenceTokenizer()
+
+    # Tokenize the caption
+    sent_tokens = tokenizer.tokenize(caption)
+
+    # Return a list of tokens (sentences)
+    return sent_tokens
+
 def detect_ft(caption, preprocessing):
     """Identifies the language of a text using fastText.
 
@@ -180,18 +200,21 @@ def detect_ft(caption, preprocessing):
         return None
 
     else:
+        # Get sentences
+        sentences = split_sentence(caption)
+
         # Calculate the character length of each sentence
-        char_len = len(caption)
+        char_len = [len(s) for s in sentences]
 
         # Make predictions
-        prediction = ft_model.predict(caption)
+        predictions = ft_model.predict_proba(sentences, k=1, normalized=True)
 
         # Get the predicted languages and their probabilities
-        language = prediction[0][0][-2:]
-        probability = prediction[1][0]
+        languages = [[elem[0] for elem in p] for p in predictions]
+        probabilities = [[elem[1] for elem in p] for p in predictions]
 
         # Return languages and probabilities
-        return [language, probability, char_len]
+        return list(zip(*languages, *probabilities, char_len))
     
 # Database info
 print("[INFO] - Setting up database URL...")
