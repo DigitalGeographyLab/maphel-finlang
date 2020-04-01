@@ -212,6 +212,9 @@ def detect_ft(caption, preprocessing):
         # Get the predicted languages and their probabilities
         languages = predictions[0]
         probabilities = predictions[1]
+        
+        # clean language detections
+        languages = [[l.split('__')[-1] for l in langs] for langs in languages]
 
         # Return languages and probabilities
         return list(zip(languages, probabilities, char_len))
