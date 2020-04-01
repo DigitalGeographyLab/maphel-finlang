@@ -207,14 +207,14 @@ def detect_ft(caption, preprocessing):
         char_len = [len(s) for s in sentences]
 
         # Make predictions
-        predictions = ft_model.predict_proba(sentences, k=1, normalized=True)
+        predictions = ft_model.predict(sentences)
 
         # Get the predicted languages and their probabilities
-        languages = [[elem[0] for elem in p] for p in predictions]
-        probabilities = [[elem[1] for elem in p] for p in predictions]
+        languages = predictions[0]
+        probabilities = predictions[1]
 
         # Return languages and probabilities
-        return list(zip(*languages, *probabilities, char_len))
+        return list(zip(languages, probabilities, char_len))
     
 # Database info
 print("[INFO] - Setting up database URL...")
