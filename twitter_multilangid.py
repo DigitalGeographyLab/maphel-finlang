@@ -117,6 +117,12 @@ def preprocess_caption(row, mode):
         
         # remove hashes from hastags
         row = row.replace('#', '')
+        
+        # remove old school heart emojis <3
+        row = row.replace('&lt;3', '')
+        
+        # remove greater than symbols >
+        row = row.replace('&gt;', '')
 
         # Split the string into a list
         row = row.split()
@@ -215,6 +221,10 @@ def detect_ft(caption, preprocessing):
         
         # clean language detections
         languages = [[l.split('__')[-1] for l in langs] for langs in languages]
+        
+        # flatten lists
+        languages = [l for langs in languages for l in langs]
+        probabilities = [p for probs in probabilities for p in probs]
 
         # Return languages and probabilities
         return list(zip(languages, probabilities, char_len))
@@ -297,7 +307,19 @@ for i in range(int(row_count / chunksize) + 1):
     print('[INFO] - Dropping rows without language detections')
     df = df[df['langid'].notnull()]
     
+    # find max detections
+    maxdet = df['langid'].str.len().max()
+    
+    # create column list
+    collist = []
+    for i in range(maxdet):
+        num = i + 1
+        name = 'detection{}'.format(num)
+        collist.append(name)
+    
     # parse results
+    tempdf = pd.DataFrame(df['langid'].tolist(), columns=collist)
+    
     print('[INFO] - Parsing results to improve readability')
     df['language'] = df['langid'].apply(lambda x: x[0])
     df['prob'] = df['langid'].apply(lambda x: x[1])

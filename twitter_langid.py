@@ -116,6 +116,12 @@ def preprocess_caption(row, mode):
         
         # remove hashes from hastags
         row = row.replace('#', '')
+        
+        # remove old school heart emojis <3
+        row = row.replace('&lt;3', '')
+        
+        # remove greater than symbols >
+        row = row.replace('&gt;', '')
 
         # Split the string into a list
         row = row.split()
