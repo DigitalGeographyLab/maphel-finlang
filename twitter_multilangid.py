@@ -306,27 +306,50 @@ for i in range(int(row_count / chunksize) + 1):
     # drop rows without language detections
     print('[INFO] - Dropping rows without language detections')
     df = df[df['langid'].notnull()]
-    
-    # find max detections
+        
+    # get required column count from max detections
     maxdet = df['langid'].str.len().max()
     
-    # create column list
+    # create column list of detections
     collist = []
     for i in range(maxdet):
         num = i + 1
         name = 'detection{}'.format(num)
         collist.append(name)
     
-    # parse results
-    tempdf = pd.DataFrame(df['langid'].tolist(), columns=collist)
+    # create column list of separated detection outputs
+    outlist = []
+    for col in collist:
+        number = col[-1]
+        lname = 'lang' + str(number)
+        outlist.append(lname)
+        pname = 'prob' + str(number)
+        outlist.append(pname)
+        cname = 'char_len' + str(number)
+        outlist.append(cname)
     
+    # separate detections to columns, keep original index
+    tempdf = pd.DataFrame(df['langid'].tolist(), columns=collist, index=df.index)
+        
+    # parse detections into separate columns
     print('[INFO] - Parsing results to improve readability')
-    df['language'] = df['langid'].apply(lambda x: x[0])
-    df['prob'] = df['langid'].apply(lambda x: x[1])
-    df['charlen'] = df['langid'].apply(lambda x: x[2])
+    for col in collist:
+        number = col[-1]
+        lname = 'lang' + str(number)
+        pname = 'prob' + str(number)
+        cname = 'char_len' + str(number)
+        for i, row in tempdf.iterrows():
+            if row[col] != None:
+                tempdf.at[i, lname] = row[col][0]
+                tempdf.at[i, pname] = row[col][1]
+                tempdf.at[i, cname] = row[col][2]
     
-    # drop list, postgreSQL doesn't support it
-    df = df.drop(columns=['langid'])
+    # merge results in
+    df = df.merge(tempdf, left_index=True, right_index=True)
+    
+    # drop unnecessary columns
+    collist.append('langid')
+    df = df.drop(columns=collist)
     
     # push language detection results to database
     print('[INFO] - Pushing results from chunk {} results to table'.format(i))
