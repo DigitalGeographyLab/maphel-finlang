@@ -312,15 +312,15 @@ for i in range(int(row_count / chunksize) + 1):
     
     # create column list of detections
     collist = []
-    for i in range(maxdet):
-        num = i + 1
+    for x in range(maxdet):
+        num = x + 1
         name = 'detection{}'.format(num)
         collist.append(name)
     
     # create column list of separated detection outputs
     outlist = []
     for col in collist:
-        number = col[-1]
+        number = col[9:]
         lname = 'lang' + str(number)
         outlist.append(lname)
         pname = 'prob' + str(number)
@@ -338,10 +338,10 @@ for i in range(int(row_count / chunksize) + 1):
         lname = 'lang' + str(number)
         pname = 'prob' + str(number)
         cname = 'char_len' + str(number)
-        for i, row in tempdf.iterrows():
+        for j, row in tempdf.iterrows():
             if row[col] != None:
-                tempdf.at[i, lname] = row[col][0]
-                tempdf.at[i, pname] = row[col][1]
+                tempdf.at[j, lname] = row[col][0]
+                tempdf.at[j, pname] = row[col][1]
                 tempdf.at[i, cname] = row[col][2]
     
     # merge results in
