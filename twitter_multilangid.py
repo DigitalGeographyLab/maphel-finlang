@@ -333,16 +333,16 @@ for i in range(int(row_count / chunksize) + 1):
         
     # parse detections into separate columns
     print('[INFO] - Parsing results to improve readability')
-    for col in collist:
-        number = col[-1]
+    for c in collist:
+        number = c[9:]
         lname = 'lang' + str(number)
         pname = 'prob' + str(number)
         cname = 'char_len' + str(number)
         for j, row in tempdf.iterrows():
-            if row[col] != None:
-                tempdf.at[j, lname] = row[col][0]
-                tempdf.at[j, pname] = row[col][1]
-                tempdf.at[i, cname] = row[col][2]
+            if row[c] != None:
+                tempdf.at[j, lname] = row[c][0]
+                tempdf.at[j, pname] = row[c][1]
+                tempdf.at[i, cname] = row[c][2]
     
     # merge results in
     df = df.merge(tempdf, left_index=True, right_index=True)
