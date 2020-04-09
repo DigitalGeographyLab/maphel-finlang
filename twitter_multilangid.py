@@ -312,7 +312,7 @@ for i in range(int(row_count / chunksize) + 1):
     
     # create column list of detections
     collist = []
-    for x in range(maxdet):
+    for x in range(int(maxdet)):
         num = x + 1
         name = 'detection{}'.format(num)
         collist.append(name)
@@ -342,7 +342,7 @@ for i in range(int(row_count / chunksize) + 1):
             if row[c] != None:
                 tempdf.at[j, lname] = row[c][0]
                 tempdf.at[j, pname] = row[c][1]
-                tempdf.at[i, cname] = row[c][2]
+                tempdf.at[j, cname] = row[c][2]
     
     # merge results in
     df = df.merge(tempdf, left_index=True, right_index=True)
@@ -350,6 +350,9 @@ for i in range(int(row_count / chunksize) + 1):
     # drop unnecessary columns
     collist.append('langid')
     df = df.drop(columns=collist)
+    
+    # drop tempdf to save memory
+    del tempdf
     
     # push language detection results to database
     print('[INFO] - Pushing results from chunk {} results to table'.format(i))
