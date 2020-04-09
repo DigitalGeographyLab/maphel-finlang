@@ -270,7 +270,7 @@ botlist = [61043461,61043172,126049550,618294231,1148156568,1447948944,
            322598698]
 
 # Define chunksize
-chunksize = 500000
+chunksize = 1000000
 
 # Get row count
 print('[INFO] - Getting row count of ' + str(tablename) + '...')
