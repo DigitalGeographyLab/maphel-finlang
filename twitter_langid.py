@@ -225,10 +225,10 @@ session = Session()
 sql_rc = "SELECT COUNT(*) FROM " + tablename
 
 # read user list in
-userdf = pd.read_excel('UserList_FinEst.xlsx')
+# userdf = pd.read_excel('UserList_FinEst.xlsx')
 
 # define userlist
-userlist = userdf['userID'].values.tolist()
+# userlist = userdf['userID'].values.tolist()
 
 # List of common bots
 botlist = [61043461,61043172,126049550,618294231,1148156568,1447948944,
@@ -251,23 +251,26 @@ print('[INFO] - Row count: ' + str(row_count))
 run_count = int(row_count / chunksize) + 1
 print('[INFO] - Table chunk count: ' + str(run_count))
 
+# columns for fulltext tweets
+ftcols = 'row_id, id, id_str, user_id, created_at, full_text, word_count, lang, lat, lon, place_name, user_loc'
+
 # Read chunks in, detect languages and update database
 for i in range(int(row_count / chunksize) + 1):
     print('[INFO] - Querying chunk {}/{}'.format(i, run_count))
 
-    query = "SELECT * FROM {tablename} ORDER BY row_id LIMIT {chunksize} OFFSET {offset};".format(
-        tablename=tablename, chunksize=chunksize, offset=i * chunksize)
+    query = "SELECT {ftcols} FROM {tablename} ORDER BY row_id ASC LIMIT {chunksize} OFFSET {offset};".format(
+        ftcols=ftcols, tablename=tablename, chunksize=chunksize, offset=i * chunksize)
 
     # read queary into dataframe
     df = pd.read_sql(query,con=con)
 
     # drop known bots
     print('[INFO] - Removing bots from chunk {}'.format(i))
-    df = df[~df['user_id'].isin(botlist)]
+    # df = df[~df['user_id'].isin(botlist)]
     
     # dropping unwwanted users
     #print('[INFO] - Selecting identified users from chunk {}'.format(i))
-    df = df[df['user_id'].isin(userlist)]
+    # df = df[df['user_id'].isin(userlist)]
     
     # detect languages
     print('[INFO] - Detecting languages in chunk {}'.format(i))
