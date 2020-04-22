@@ -3,7 +3,31 @@
 """
 Created on Mon Mar 23 13:14:31 2020
 
-@author: waeiski
+INFO
+####
+
+This script reads tweets from a PostgreSQL database table to pandas,
+detects the language of the text with fastText and saves the results to 
+a new table in the same database.
+
+The tweets are read progressively in chunks to preserve memory. In order to
+work the database has to be properly set up with primary keys and indices.
+Otherwise each chunk is a random selection.
+
+USAGE
+#####
+
+Run the script with the following command:
+    python twitter_multilangid.py -ho your.host.com -db databasename -u username
+    -pw password -p rm_all -c colname -i table1 -o table2 -mp path/to/lid.176.bin
+
+NOTE
+####
+
+You should have downloaded fastText language detection model binary before
+running this script.
+
+@author: Tuomas Väisänen & Tuomo Hiippala
 """
 
 import pandas as pd
@@ -80,8 +104,8 @@ else:
     
 ft_model = fasttext.load_model(modelpath)
 
-# Define the preprocessing function
-def preprocess_caption(row, mode):
+# Define the preprocessing function from Hiippala et al. 2019
+def preprocess_caption(row: str, mode: str) -> str:
     """Applies the selected preprocessing steps to the text.
 
      Args:
@@ -98,7 +122,10 @@ def preprocess_caption(row, mode):
     if mode != 'no_preprocessing':
 
         # Convert unicode emoji to shortcode emoji
-        row = emoji.demojize(row)
+        try:
+            row = emoji.demojize(row)
+        except TypeError:
+            pass
 
         # Remove single emojis and their groups
         row = re.sub(r':(?<=:)([a-zA-Z0-9_\-&\'’]*)(?=:):', '', row)
@@ -159,6 +186,7 @@ def preprocess_caption(row, mode):
     # Return the preprocessed row
     return row
 
+# function to split sentences from Hiippala et al. 2019
 def split_sentence(caption):
     """Tokenizes sentences using NLTK's Punkt tokenizer.
 
@@ -178,6 +206,7 @@ def split_sentence(caption):
     # Return a list of tokens (sentences)
     return sent_tokens
 
+# function to detect language with fastText from Hiippala et al. 2019
 def detect_ft(caption, preprocessing):
     """Identifies the language of a text using fastText.
 
@@ -206,28 +235,18 @@ def detect_ft(caption, preprocessing):
         return None
 
     else:
-        # Get sentences
-        sentences = split_sentence(caption)
-
         # Calculate the character length of each sentence
-        char_len = [len(s) for s in sentences]
+        char_len = len(caption)
 
         # Make predictions
-        predictions = ft_model.predict(sentences)
+        prediction = ft_model.predict(caption)
 
         # Get the predicted languages and their probabilities
-        languages = predictions[0]
-        probabilities = predictions[1]
-        
-        # clean language detections
-        languages = [[l.split('__')[-1] for l in langs] for langs in languages]
-        
-        # flatten lists
-        languages = [l for langs in languages for l in langs]
-        probabilities = [p for probs in probabilities for p in probs]
+        language = prediction[0][0][-2:]
+        probability = prediction[1][0]
 
         # Return languages and probabilities
-        return list(zip(languages, probabilities, char_len))
+        return [language, probability, char_len]
     
 # Database info
 print("[INFO] - Setting up database URL...")
@@ -270,7 +289,7 @@ botlist = [61043461,61043172,126049550,618294231,1148156568,1447948944,
            322598698]
 
 # Define chunksize
-chunksize = 1000000
+chunksize = 50000
 
 # Get row count
 print('[INFO] - Getting row count of ' + str(tablename) + '...')
@@ -281,85 +300,62 @@ print('[INFO] - Row count: ' + str(row_count))
 run_count = int(row_count / chunksize) + 1
 print('[INFO] - Table chunk count: ' + str(run_count))
 
+# columns for fulltext tweets
+ftcols = 'row_id, id, id_str, user_id, created_at, full_text, word_count, lang, latitude, longitude, place_name, user_loc'
+
 # Read chunks in, detect languages and update database
 for i in range(int(row_count / chunksize) + 1):
     print('[INFO] - Querying chunk {}/{}'.format(i, run_count))
 
-    query = "SELECT * FROM {tablename} ORDER BY row_id LIMIT {chunksize} OFFSET {offset};".format(
-        tablename=tablename, chunksize=chunksize, offset=i * chunksize)
+    query = "SELECT {ftcols} FROM {tablename} ORDER BY row_id LIMIT {chunksize} OFFSET {offset};".format(
+        ftcols=ftcols, tablename=tablename, chunksize=chunksize, offset=i * chunksize)
 
     # read queary into dataframe
     df = pd.read_sql(query,con=con)
 
     # drop known bots
-    print('[INFO] - Removing bots from chunk {}'.format(i))
-    df = df[~df['user_id'].isin(botlist)]
+    #print('[INFO] - Removing bots from chunk {}'.format(i))
+    #df = df[~df['user_id'].isin(botlist)]
     
     # dropping unwwanted users
     #print('[INFO] - Selecting identified users from chunk {}'.format(i))
-    df = df[df['user_id'].isin(userlist)]
+    #df = df[df['user_id'].isin(userlist)]
+    
+    # split texts into sentences list
+    df['sents'] = df[inputcol].apply(split_sentence)
+    
+    # explode sentences to one per row
+    df = df.explode('sents').reset_index(drop=True)
+    
+    # drop empty sentences
+    df = df[df['sents'].notnull()]
     
     # detect languages
     print('[INFO] - Detecting languages in chunk {}'.format(i))
-    df['langid'] = df[inputcol].apply(lambda x: detect_ft(x, prep))
+    df['langid'] = df['sents'].apply(lambda x: detect_ft(x, prep))
     
     # drop rows without language detections
     print('[INFO] - Dropping rows without language detections')
     df = df[df['langid'].notnull()]
         
-    # get required column count from max detections
-    maxdet = df['langid'].str.len().max()
-    
-    # create column list of detections
-    collist = []
-    for x in range(int(maxdet)):
-        num = x + 1
-        name = 'detection{}'.format(num)
-        collist.append(name)
-    
-    # create column list of separated detection outputs
-    outlist = []
-    for col in collist:
-        number = col[9:]
-        lname = 'lang' + str(number)
-        outlist.append(lname)
-        pname = 'prob' + str(number)
-        outlist.append(pname)
-        cname = 'char_len' + str(number)
-        outlist.append(cname)
-    
-    # separate detections to columns, keep original index
-    tempdf = pd.DataFrame(df['langid'].tolist(), columns=collist, index=df.index)
-        
-    # parse detections into separate columns
+    # parse results
     print('[INFO] - Parsing results to improve readability')
-    for c in collist:
-        number = c[9:]
-        lname = 'lang' + str(number)
-        pname = 'prob' + str(number)
-        cname = 'char_len' + str(number)
-        for j, row in tempdf.iterrows():
-            if row[c] != None:
-                tempdf.at[j, lname] = row[c][0]
-                tempdf.at[j, pname] = row[c][1]
-                tempdf.at[j, cname] = row[c][2]
+    df['language'] = df['langid'].apply(lambda x: x[0])
+    df['prob'] = df['langid'].apply(lambda x: x[1])
+    df['charlen'] = df['langid'].apply(lambda x: x[2])
     
-    # merge results in
-    df = df.merge(tempdf, left_index=True, right_index=True)
-    
-    # drop unnecessary columns
-    collist.append('langid')
-    df = df.drop(columns=collist)
-    
-    # drop tempdf to save memory
-    del tempdf
+    # drop list, postgreSQL doesn't support it
+    df = df.drop(columns=['langid'])
     
     # push language detection results to database
     print('[INFO] - Pushing results from chunk {} results to table'.format(i))
     df.to_sql(outtable, schema='public', con=engine, if_exists='append',
               index=False, method='multi')
 
+# print status message
 print('[INFO] - Table ' + str(tablename) + ' processed and pushed to ' + str(outtable))
-print('[INFO] - ...done!')
+
 # Close session
 session.close()
+
+print('[INFO] - ... done!')
