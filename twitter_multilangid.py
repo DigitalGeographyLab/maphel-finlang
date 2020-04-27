@@ -81,7 +81,7 @@ else:
 ft_model = fasttext.load_model(modelpath)
 
 # Define the preprocessing function
-def preprocess_caption(row, mode):
+def preprocess_caption(row: str, mode: str) -> str:
     """Applies the selected preprocessing steps to the text.
 
      Args:
@@ -98,7 +98,10 @@ def preprocess_caption(row, mode):
     if mode != 'no_preprocessing':
 
         # Convert unicode emoji to shortcode emoji
-        row = emoji.demojize(row)
+        try:
+            row = emoji.demojize(row)
+        except TypeError:
+            pass
 
         # Remove single emojis and their groups
         row = re.sub(r':(?<=:)([a-zA-Z0-9_\-&\'’]*)(?=:):', '', row)
@@ -297,6 +300,9 @@ for i in range(int(row_count / chunksize) + 1):
     
     # explode sentences to one per row
     df = df.explode('sents').reset_index(drop=True)
+    
+    # drop empty sentences
+    df = df[df['sents'].notnull()]
     
     # detect languages
     print('[INFO] - Detecting languages in chunk {}'.format(i))
