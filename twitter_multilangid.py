@@ -3,7 +3,31 @@
 """
 Created on Mon Mar 23 13:14:31 2020
 
-@author: waeiski
+INFO
+####
+
+This script reads tweets from a PostgreSQL database table to pandas,
+detects the language of the text with fastText and saves the results to 
+a new table in the same database.
+
+The tweets are read progressively in chunks to preserve memory. In order to
+work the database has to be properly set up with primary keys and indices.
+Otherwise each chunk is a random selection.
+
+USAGE
+#####
+
+Run the script with the following command:
+    python twitter_multilangid.py -ho your.host.com -db databasename -u username
+    -pw password -p rm_all -c colname -i table1 -o table2 -mp path/to/lid.176.bin
+
+NOTE
+####
+
+You should have downloaded fastText language detection model binary before
+running this script.
+
+@author: Tuomas Väisänen & Tuomo Hiippala
 """
 
 import pandas as pd
@@ -80,7 +104,7 @@ else:
     
 ft_model = fasttext.load_model(modelpath)
 
-# Define the preprocessing function
+# Define the preprocessing function from Hiippala et al. 2019
 def preprocess_caption(row: str, mode: str) -> str:
     """Applies the selected preprocessing steps to the text.
 
@@ -162,6 +186,7 @@ def preprocess_caption(row: str, mode: str) -> str:
     # Return the preprocessed row
     return row
 
+# function to split sentences from Hiippala et al. 2019
 def split_sentence(caption):
     """Tokenizes sentences using NLTK's Punkt tokenizer.
 
@@ -181,6 +206,7 @@ def split_sentence(caption):
     # Return a list of tokens (sentences)
     return sent_tokens
 
+# function to detect language with fastText from Hiippala et al. 2019
 def detect_ft(caption, preprocessing):
     """Identifies the language of a text using fastText.
 
@@ -275,7 +301,7 @@ run_count = int(row_count / chunksize) + 1
 print('[INFO] - Table chunk count: ' + str(run_count))
 
 # columns for fulltext tweets
-ftcols = 'row_id, id, id_str, user_id, created_at, full_text, word_count, lang, lat, lon, place_name, user_loc'
+ftcols = 'row_id, id, id_str, user_id, created_at, full_text, word_count, lang, latitude, longitude, place_name, user_loc'
 
 # Read chunks in, detect languages and update database
 for i in range(int(row_count / chunksize) + 1):
@@ -326,7 +352,10 @@ for i in range(int(row_count / chunksize) + 1):
     df.to_sql(outtable, schema='public', con=engine, if_exists='append',
               index=False, method='multi')
 
+# print status message
 print('[INFO] - Table ' + str(tablename) + ' processed and pushed to ' + str(outtable))
-print('[INFO] - ...done!')
+
 # Close session
 session.close()
+
+print('[INFO] - ... done!')
