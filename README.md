@@ -1,8 +1,10 @@
-# maphel-finlang
-A repository containing the scripts used in the article Mapping the languages of Twitter in Finland: richness and diversity in space and time
+# Mapping the languages of Twitter in Finland: richness and diversity in space and time 
+A repository containing the scripts used in the article published in Neuphilologische Mitteilungen in 2020. The scripts use common python libraries
 
 # Pre-requisites
-A Twitter dataset containing user-specific timelines. To gather this data set, please see this repo (SAMULI MASSINEN)
+* A Twitter dataset containing user-specific timelines. To gather this data set, please see Samuli Massinen's repo: https://github.com/DigitalGeographyLab/cross-border-mobility-twitter
+* Language identification model binary for fastText available from here: https://fasttext.cc/docs/en/language-identification.html
+
 
 ### Recommended running order of scripts
 | Step | Script | Description | Input | Output |
