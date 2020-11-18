@@ -8,6 +8,7 @@ This repository contains the scripts used in the article published in *Neuphilol
 * Area polygons. The administrative areas used in the article can be found from National Land Survey's [download service](https://tiedostopalvelu.maanmittauslaitos.fi/tp/kartta?lang=en) 
 
 ### How to use the scripts
+The scripts can be run from the command line in a terminal.
 1. Create a python environment by typing `conda create --name environment_name` and activate it `conda activate environment_name`
 2. Instal packages using the [requirements.txt](requirements.txt) by typing `conda install --file requirements.txt`
 3. Run scripts by typing `python scpritname.py` and add flags if required by the script
