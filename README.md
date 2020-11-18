@@ -15,7 +15,7 @@ A repository containing the scripts used in the article published in Neuphilolog
 ### Recommended running order of scripts
 | Step | Script | Description | Input | Output |
 | ---- | :----- | :---------- | :---- | :----- |
-| 0 | [requirements.txt](requirements.txt) | Python environment text file | Command | Python environment |
+| 0 | [requirements.txt](requirements.txt) | Python environment text file | `conda install --file requirements.txt` | Python environment |
 | 1 | [twitter_multilangid.py](twitter_multilangid.py) | Detects languages of tweets in database | database table | database table |
 | 2 | [get_geotagged_posts.py](get_geotagged_posts.py) | Downloads geotagged tweets to disk | database table | Pickled dataframe |
 | 3 | [get_user_langprofiles.py](get_user_lang_profiles.py) | Downloads user language profile to disk | Database table | Pickled dataframe |
