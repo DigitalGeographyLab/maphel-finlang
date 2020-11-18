@@ -1,5 +1,5 @@
 # Mapping the languages of Twitter in Finland: richness and diversity in space and time 
-A repository containing the scripts used in the article published in Neuphilologische Mitteilungen in 2020. The scripts use common python libraries
+This repository contains the scripts used in the article published in *Neuphilologische Mitteilungen* in 2020. The scripts are written in Python 3.7 using Anaconda distribution specifically.
 
 ### Requirements
 * Python version 3.7 or newer (preferrably Anaconda distribution)
