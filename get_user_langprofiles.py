@@ -27,9 +27,6 @@ The output pickle contains language detections per user in a python list.
 
 import pandas as pd
 import psycopg2
-from urllib.parse import urlparse
-import emoji
-import re
 from sqlalchemy.engine.url import URL
 from sqlalchemy import create_engine
 from sqlalchemy import MetaData
