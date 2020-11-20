@@ -1,3 +1,5 @@
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.4279402.svg)](https://doi.org/10.5281/zenodo.4279402)
+
 # Mapping the languages of Twitter in Finland: richness and diversity in space and time 
 This repository contains the scripts used in the article published in *Neuphilologische Mitteilungen* in 2020. The scripts are written in Python 3.7 using Anaconda distribution specifically.
 
