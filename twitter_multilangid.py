@@ -242,7 +242,7 @@ def detect_ft(caption, preprocessing):
         prediction = ft_model.predict(caption)
 
         # Get the predicted languages and their probabilities
-        language = prediction[0][0][-2:]
+        language = prediction[0][0].split('__')[-1]
         probability = prediction[1][0]
 
         # Return languages and probabilities
